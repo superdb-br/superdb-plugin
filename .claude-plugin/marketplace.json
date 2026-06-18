@@ -1,0 +1,16 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "superdb",
+  "description": "Marketplace do SuperDB — skill de integração pra apps que usam o SuperDB como backend.",
+  "owner": {
+    "name": "SuperDB",
+    "url": "https://www.superdb.com.br"
+  },
+  "plugins": [
+    {
+      "name": "superdb",
+      "source": "./",
+      "description": "Skill de integração com o SuperDB: conectar apps (auth + dados + migrations), ancorado em supabase-js."
+    }
+  ]
+}

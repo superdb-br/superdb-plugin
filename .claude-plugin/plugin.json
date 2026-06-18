@@ -1,0 +1,11 @@
+{
+  "name": "superdb",
+  "version": "1.0.0",
+  "description": "Integração com o SuperDB — BaaS multi-tenant (Postgres + Auth + REST + Storage + Realtime), drop-in do supabase-js. Cobre conectar app web/mobile, login, ler/gravar dados via REST com RLS, e aplicar schema/migrations via management key. Se você conhece supabase-js, conhece isto.",
+  "author": {
+    "name": "SuperDB",
+    "url": "https://www.superdb.com.br"
+  },
+  "homepage": "https://www.superdb.com.br",
+  "keywords": ["superdb", "supabase", "baas", "postgrest", "auth", "rls"]
+}
