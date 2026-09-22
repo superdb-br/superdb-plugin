@@ -53,8 +53,10 @@ const db = createClient('https://auth.superdb.com.br', process.env.SUPERDB_ANON_
 })
 ```
 > Zero-dep: dá pra usar o `templates/superdb.ts` (`createSuperDB({...})`) no lugar — mesmo contrato.
-As chamadas `.auth.signInWithPassword` / `.from().select().eq()` ficam **iguais**. O que
-quebra: `.storage`/`.channel` (ainda stub — veja `references/gotchas.md`) e métodos de auth
+As chamadas `.auth.signInWithPassword` / `.from().select().eq()` / `.storage.from().upload()`
+ficam **iguais** (o `.storage` é real). O que quebra: `.channel` (realtime — ainda stub, minte
+`/rt/v1/token` com a sessão + `@supabase/realtime-js`; o RLS vale como no Supabase, mas regra que
+consulta outra tabela precisa de função `security definer` — veja `references/recipes.md`) e alguns métodos de auth
 que o SuperDB ainda não tem (`onAuthStateChange`, `resetPasswordForEmail`, etc.).
 
 ## 6. Validar + desligar o Supabase
