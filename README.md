@@ -17,6 +17,17 @@ Abra um Claude novo e pronto — quando você pedir pra construir/conectar um ap
 /plugin marketplace update superdb
 ```
 
+## Servidor MCP incluso
+
+O plugin já traz o `.mcp.json` do **MCP remoto** do SuperDB
+(`https://mcp.superdb.com.br/mcp`). Depois de instalar, o agente pergunta se você
+quer conectar; o acesso é por **login**, não por chave colada em arquivo, e você
+escolhe na tela de consentimento quais projetos ele enxerga.
+
+Sem conectar, a skill continua funcionando: ela ensina a usar a API. Conectado, o
+agente lê e escreve no seu projeto de verdade (listar tabelas, rodar SQL de
+leitura, aplicar migrations).
+
 ## O que cobre
 
 - Conectar app web ou celular (`npm install @superdb/client`, `createClient(url, anonKey, { project })`)
@@ -31,3 +42,9 @@ Abra um Claude novo e pronto — quando você pedir pra construir/conectar um ap
 - Armadilhas comuns (as tabelas `auth_*` não saem pela REST: use `profiles`, e outras)
 
 Detalhes: `skills/superdb/SKILL.md`. Site: https://www.superdb.com.br
+
+## Licença
+
+MIT (ver `LICENSE`). O plugin é instrução e configuração: os trechos de
+`skills/superdb/templates/` existem para você copiar para dentro do seu projeto
+sem pensar em licença. O servidor do SuperDB tem licença própria.

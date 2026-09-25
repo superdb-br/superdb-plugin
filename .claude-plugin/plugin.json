@@ -1,6 +1,6 @@
 {
   "name": "superdb",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Integração com o SuperDB — BaaS brasileiro (Postgres + Auth + REST + Storage + Realtime + Push), drop-in do supabase-js. Cobre conectar app web/mobile, login (inclusive social e pelo WhatsApp), ler/gravar dados com RLS, aplicar schema/migrations por API, LGPD, notificação push e o MCP remoto. Se você conhece supabase-js, conhece isto.",
   "author": {
     "name": "SuperDB",
@@ -17,5 +17,6 @@
     "mcp",
     "lgpd",
     "brasil"
-  ]
+  ],
+  "license": "MIT"
 }
