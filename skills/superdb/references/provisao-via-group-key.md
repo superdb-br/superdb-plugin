@@ -111,8 +111,15 @@ cliente qualquer `ALTER TABLE` feito em produção, no mesmo instante.
 existe fica com a estrutura antiga. Migrar os existentes é migration do app, uma
 por tenant, via `/db/exec` com a management key de cada um.
 
-`foreign_keys: null` na resposta = o fechamento do clone falhou e o template
-ficou **sem integridade referencial**. Não trate como sucesso.
+Se o fechamento do clone falhar, a resposta é **500 `clone_incompleto`**, com o
+`project_id` e o `slug` do projeto criado: não use esse template. (Até 28/09/2026
+a falha voltava como 201 com `foreign_keys: null`, e o template saía sem
+integridade referencial.)
+
+Origem em banco dedicado: a publicação compara a estrutura da origem com a cópia
+que a plataforma usa para clonar. Se a origem mudou desde a última
+sincronização, a resposta é **409 `fonte_indisponivel`** e nada é criado: peça ao
+suporte para sincronizar e repita a mesma chamada.
 
 Pelo MCP: ferramenta `superdb_publish_template`, que só aparece quando
 `SUPERDB_GROUP_ID` e `SUPERDB_GROUP_KEY` estão configuradas.
@@ -135,8 +142,8 @@ curl "$SUPERDB_URL/groups/v1/$GROUP_ID" -H "Authorization: Bearer $GROUP_KEY"
 ```
 
 - `template.foreign_keys` — confira **antes e depois** de publicar. Zero num
-  schema que tem FK é o mesmo sintoma do `foreign_keys: null` na resposta do
-  publish: o fechamento do clone falhou.
+  schema que tem FK é sintoma de fechamento de clone que falhou (antes de
+  28/09/2026 isso passava calado).
 - `source` — de onde a PRÓXIMA versão sai. `null` significa que o group nunca
   publicou e aponta direto para a fonte: aí `ALTER TABLE` em produção vale para
   o próximo cliente no mesmo instante.
@@ -156,3 +163,19 @@ projetos daquele plano: Grátis 2, Site 3, Pro 10, Escala 40.
 
 Trate os dois 402 como erros de negócio distintos — um pede upgrade, o outro não
 tem upgrade que resolva.
+
+## Template em banco dedicado (28/09/2026)
+
+`POST /groups/v1/{groupId}/tenants` pode responder `409 template_indisponivel`
+em dois casos, e nos dois nada é criado. Não é falha momentânea: repetir a
+chamada não resolve.
+
+- **O projeto template foi excluído.** Publique uma versão nova a partir da
+  fonte (`POST /platform/v1/groups/:id/template/publish`) ou aponte o group para
+  outro template; depois a mesma chamada (mesmo slug) funciona. A exclusão de um
+  projeto que é template ou fonte de group ativo é recusada (`409
+  template_protected` / `source_protected`), então isso só acontece com group
+  antigo.
+- **O template roda num banco dedicado e a estrutura usada para clonar não está
+  alinhada com ele.** Peça ao suporte para alinhar o template, e a mesma chamada
+  volta a funcionar.

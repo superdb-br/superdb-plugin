@@ -6,7 +6,7 @@
 | `https://auth.superdb.com.br` | Login/cadastro (`/auth/v1/*`), gestão (`/platform/v1/*`) |
 | `https://api.superdb.com.br` | **Dados (PostgREST).** Tabela na raiz: `/minha_tabela` (forma canônica). Desde 31/08/2026 `/rest/v1/minha_tabela` também é aceito, pro supabase-js funcionar sem ajuste. |
 | `https://storage.superdb.com.br` | Arquivos (S3-compat) |
-| `https://realtime.superdb.com.br` | Tempo real |
+| `https://realtime.superdb.com.br` | Tempo real. O socket de cada projeto vem em `url` na resposta do `POST /rt/v1/token`; use esse, não fixe o endereço (projeto com banco próprio tem o dele: `<slug>-rt.superdb.com.br`) |
 | `https://app.superdb.com.br` | Dashboard (provisionar projeto, ver keys) |
 
 ## Como a autenticação de DADOS funciona (importante)

@@ -36,7 +36,9 @@ O SuperDB avisa na resposta do próprio comando quando ele deixou um risco (camp
 - `.storage` **funciona** (`db.storage.from('proj_<slug>_<bucket>').upload/...` — minta `/st/v1/token` sozinho).
   O nome do bucket é o COMPLETO: com o curto (`from('avatars')`) o Storage não acha o bucket.
 - Só `.channel` (realtime) **ainda é stub**: minte `POST /rt/v1/token` e use
-  `@supabase/realtime-js` em `wss://realtime.superdb.com.br/socket` (veja `recipes.md`).
+  `@supabase/realtime-js` no endereço que vem em `url` na resposta (veja `recipes.md`).
+  Não fixe o endereço no código: o socket é do projeto (`wss://<slug>-rt.superdb.com.br/socket`
+  quando ele tem banco próprio).
 
 ## Realtime conecta mas não entrega nada
 O realtime **segue o RLS da tabela** com o papel de quem pediu o token (claim `sdb_role`):
@@ -116,8 +118,14 @@ key é a atual (ES256) do dashboard? (4) a tabela tem RLS + política? Isso reso
 ## Link mágico / "esqueci a senha" não volta pro app
 O `redirect_to` do link mágico (`/auth/v1/signin/magic-link`) e da redefinição de senha
 (`/auth/v1/password/forgot`) tem de estar cadastrado, **exatamente como o app o pede**, em
-*Autenticação → URLs de redirecionamento* (a mesma lista do login social). Fora da lista, o
-link cai no destino padrão da plataforma. A redefinição chega em `redirect_to#token=…`: a
+*Autenticação → URLs de redirecionamento* (a mesma lista do login social). **Vercel/Netlify:** o
+endereço muda a cada deploy, então cadastre o padrão do time, `https://*-seutime.vercel.app` (o `*`
+só vale no começo e com o resto fixo; `*.vercel.app` e `meuapp-*.vercel.app` são recusados no
+cadastro). Fora da lista, a
+chamada é **recusada com 400** (`redirect_to_nao_cadastrado`) e nenhum e-mail sai: até 22/09/2026
+o link ia para o destino padrão da plataforma e o usuário final recebia uma página 404. Sem
+`redirect_to` e sem nada cadastrado vem `projeto_sem_url_de_retorno`. A barra final não separa
+(`https://app/` e `https://app` são a mesma URL). A redefinição chega em `redirect_to#token=…`: a
 página lê o token do fragmento e chama `POST /auth/v1/password/reset {token, new_password}`
 (token de 1h, uso único).
 
