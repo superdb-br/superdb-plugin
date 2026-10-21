@@ -1,0 +1,20 @@
+{
+  "versao": "bb25bb04654aa8de1f119fbb2397ca2531769bc869d912f36517f1552c8ab4a8",
+  "arquivos": [
+    { "caminho": "SKILL.md", "sha256": "8080a2fbc6408bb28428024bec22ba3afcb762eba625eebcefa0076763f5fa9c", "tamanho": 12905 },
+    { "caminho": "playbooks/migrate-from-supabase.md", "sha256": "dbe34fb8daab35b806859ca124be8a866ca19589dd9fb5a2a972c33bc4f9ea30", "tamanho": 5366 },
+    { "caminho": "playbooks/new-project.md", "sha256": "3d9d40bbdce7c5e63711c90151502f4f2c2d36fa46dec704abc9986da7debd9a", "tamanho": 6546 },
+    { "caminho": "references/auth-hooks.md", "sha256": "6881b0abc439a7ba1a8ac5d0e08740f5dc1651377b3ed8a833d2e6d37fc156c6", "tamanho": 4811 },
+    { "caminho": "references/connection-contract.md", "sha256": "db813875bbd6907e58bc3a40c6104763c374912347010504fe52eb87bf04543f", "tamanho": 5080 },
+    { "caminho": "references/gotchas.md", "sha256": "47cf9968a64442e43dc8865a4a57c7f9841f93d91cc48a53564135f3d6b3f69c", "tamanho": 12248 },
+    { "caminho": "references/lgpd.md", "sha256": "f7ac2fae9cd178661ff90001d4c756bf3c861033ef4b0363db66585e0676eb54", "tamanho": 9517 },
+    { "caminho": "references/migrations-via-api.md", "sha256": "bebb4984ad20ba0150b23807289630f683fa8b503a6d9b2d8d8d870786b398d0", "tamanho": 8199 },
+    { "caminho": "references/notas-fiscais.md", "sha256": "d9afa767b47d95b7005854f39f0a22a246a4fa5144834b3c19241a4ec4ce89c3", "tamanho": 13110 },
+    { "caminho": "references/provisao-via-group-key.md", "sha256": "6561cf84fc32231acd00665cf61cd2e379b514899c594ec1fe6b82729c3bb547", "tamanho": 10874 },
+    { "caminho": "references/push.md", "sha256": "dae9d7725d763455ba5ae2ac0fd4cc20ff1269392513c1d0dd32037c128dfe0b", "tamanho": 5596 },
+    { "caminho": "references/recipes.md", "sha256": "b7d55ff939ec5a639de3c1c9fe0d24ddd995c446defe57cac772b349b64ca804", "tamanho": 14179 },
+    { "caminho": "references/social-login.md", "sha256": "1af841aa82ab46e155c7a7be721eaf3697f5cd6ce2221286d9b9d68abac2387b", "tamanho": 7688 },
+    { "caminho": "templates/.env.example", "sha256": "24549e10dde815b8d10424170b9180abdcd803dac5b3160637b93a37acc3f3bb", "tamanho": 708 },
+    { "caminho": "templates/superdb.ts", "sha256": "57074467cae904b947895fec8301659848b70ce0035235566c39952f63f78dda", "tamanho": 5695 }
+  ]
+}
