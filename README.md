@@ -17,6 +17,12 @@ Abra um Claude novo e pronto — quando você pedir pra construir/conectar um ap
 /plugin marketplace update superdb
 ```
 
+A skill deste repositório é atualizada sozinha: o workflow
+`sincronizar-skill` baixa de hora em hora a versão publicada em
+`https://superdb.com.br/skills/superdb/`, confere o sha256 de cada arquivo
+contra o `manifest.json` do site, varre segredos e só então commita (com a
+versão PATCH do plugin subindo junto).
+
 ## Servidor MCP incluso
 
 O plugin já traz o `.mcp.json` do **MCP remoto** do SuperDB

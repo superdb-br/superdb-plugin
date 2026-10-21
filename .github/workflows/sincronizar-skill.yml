@@ -1,0 +1,39 @@
+# Traz a skill `superdb` do site (https://superdb.com.br/skills/superdb/) para
+# skills/superdb, de hora em hora.
+#
+# A fonte da skill fica num repositório privado; o site a publica com um
+# manifest.json (sha256 de cada arquivo). Este workflow baixa, confere, varre
+# segredos, sobe a versão PATCH do plugin e commita. Site fora do ar ou manifest
+# ainda não publicado: termina verde, sem commit. O passo a passo está em
+# bin/sincronizar-skill.sh.
+name: sincronizar-skill
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sincronizar-skill
+  cancel-in-progress: false
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Sincronizar a skill com o site
+        env:
+          SINCRONIZAR_COMMIT: "1"
+          SINCRONIZAR_PUSH: "1"
+          # Nomes internos que não podem aparecer na skill. Ficam num secret
+          # porque escrevê-los neste repositório público seria vazá-los.
+          VARREDURA_INTERNA: ${{ secrets.VARREDURA_INTERNA }}
+        run: bash bin/sincronizar-skill.sh
