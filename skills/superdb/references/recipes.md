@@ -30,7 +30,7 @@ await db.auth.signUp({ email, password, full_name: 'Fulano' })
 await db.auth.signInWithPassword({ email, password })
 // sessão atual
 const s = await db.auth.getSession()   // { user, access_token, data_plane_token, ... }
-// sair
+// sair (revoga o refresh; os tokens já emitidos valem até vencer, no máximo 1 h, como no Supabase)
 await db.auth.signOut()
 ```
 
@@ -242,9 +242,18 @@ const r = await fetch('https://auth.superdb.com.br/rt/v1/token', {
 import { RealtimeClient } from '@supabase/realtime-js'
 const rt = new RealtimeClient(r.url, { params: { apikey: r.token } })
 rt.channel('proj_<slug>:mensagens', { config: { private: true } })
-  .on('postgres_changes', { event: '*', schema: 'proj_<slug>', table: 'mensagens' }, console.log).subscribe()
+  .on('postgres_changes', { event: '*', schema: 'proj_<slug>', table: 'mensagens' }, console.log)
+  // o "pronto" da escuta da tabela é ESTA mensagem, um instante depois do SUBSCRIBED
+  .on('system', {}, (m) => { if (m.extension === 'postgres_changes' && m.status === 'ok') recarregarPelaApi() })
+  .subscribe()
 // 3) o token expira em 1h: minte de novo e rt.setAuth(novoToken) antes de expirar — e ao entrar/sair da conta.
 ```
+
+**Não conte com evento antes da mensagem `system` de `postgres_changes`.** O `SUBSCRIBED`
+confirma a entrada no canal; a escuta da tabela fica pronta logo depois ("Subscribed to
+PostgreSQL"). Linha gravada no meio não chega pelo realtime (medido em 19/10/2026: um insert
+1,5 s depois do `SUBSCRIBED` se perdeu). É igual ao Supabase. Em teste, espere essa mensagem
+antes de inserir; no app, recarregue a lista pela API quando ela chegar.
 
 **Regra que consulta outra tabela** precisa de função `security definer` para valer no
 realtime (ele confere a regra com o papel `rt_<schema>`, que não lê as outras tabelas; sem

@@ -13,21 +13,22 @@ vez só**.
 
 ## A credencial: Group Key (`sdb_gk_...`)
 Uma **Group Key** autentica a "fábrica" (a org-mãe/ISV) e provisiona até 100 tenants
-no seu group. É **server-side only** (nunca no frontend). Peça ao platform admin pra
-criar seu group + group key.
+no seu group. É **server-side only** (nunca no frontend). O próprio dono cria o group e
+a group key no painel (seção acima); não precisa pedir à equipe.
 
 ## Fluxo completo (3 chamadas)
 
 ### 1. Provisionar o tenant
 `POST https://auth.superdb.com.br/groups/v1/<GROUP_ID>/tenants`
 - Header: `Authorization: Bearer sdb_gk_...`
-- Body: `{ "slug": "cliente_acme", "external_id": "seu-id-interno" }` (slug opcional — gerado se ausente)
+- Body: `{ "slug": "cliente_acme", "name": "Cliente Acme", "external_id": "seu-id-interno" }` (slug opcional — gerado se ausente; `name` opcional, sem ele o nome é o slug)
 - Resposta **201**: `{ tenant: {id, slug, ...}, anon_key, service_role_key, already_existed }`
 
 Cria, numa transação: o schema `proj_<slug>`, o role de login `proj_<slug>_owner`
 (confinado ao schema, sem superuser/bypassrls), a senha do owner (cifrada), as keys
 ES256 (anon + service_role) e o role de realtime isolado `rt_<schema>`.
-Erros: slug em uso → **409**; limite de 100 tenants → **402**; **slug reservado → 400
+Erros: slug em uso, ou de tenant já purgado (ver "Deletar de verdade") → **409
+`slug_taken`**; limite de 100 tenants → **402**; **slug reservado → 400
 `slug_reservado`**.
 
 > **Slugs reservados (17/08/2026).** O schema do tenant é `proj_<slug>`, e alguns
@@ -47,10 +48,11 @@ Erros: slug em uso → **409**; limite de 100 tenants → **402**; **slug reserv
 
 A group key só minta pra tenants **do seu group** (tenant de outro group → 404).
 
-### 3. Aplicar o schema-de-RLS do app
-O clone do template leva só a **estrutura** das tabelas — **não** leva RLS policies,
-triggers nem dados. O app é dono do seu schema-de-RLS: aplique-o com a pmk via
-`/db/exec` (ver `migrations-via-api.md`). Idempotente — versione sua migração.
+### 3. Aplicar o que o clone não leva
+O clone do template leva as tabelas (com CHECK, índices, FKs e defaults), os enums, as
+**RLS policies** (e liga a RLS em toda tabela do tenant) e as funções que elas usam. **Não**
+leva gatilhos, views, funções que só o app chama (RPC) nem dados. Aplique o que faltar com a
+pmk via `/db/exec` (ver `migrations-via-api.md`). Idempotente: versione sua migração.
 
 ```bash
 curl -X POST https://auth.superdb.com.br/platform/v1/projects/<projectId>/db/exec \
@@ -66,7 +68,8 @@ curl -X POST https://auth.superdb.com.br/platform/v1/projects/<projectId>/db/exe
 ## Gerenciar
 - `GET /groups/v1/<GROUP_ID>/tenants` — lista (paginado).
 - `GET /groups/v1/<GROUP_ID>/tenants/<slug>` — detalhe.
-- `DELETE /groups/v1/<GROUP_ID>/tenants/<slug>` — **soft-delete** (marca status, cancela subscription; reversível).
+- `DELETE /groups/v1/<GROUP_ID>/tenants/<slug>` — **soft-delete** (tira o tenant do ar e cancela a
+  subscription; tabelas, arquivos e chaves ficam guardados até o purge). Responde **200** `{ ok: true }`.
 
 ## Deletar de verdade (LGPD / direito ao esquecimento)
 `DELETE /groups/v1/<GROUP_ID>/tenants/<slug>/purge` (Bearer `sdb_gk_...`) — **hard-delete
@@ -78,9 +81,17 @@ Blast radius = 1 tenant.
   `?confirm=<slug>`); senão **400**. Evita apagão acidental.
 - Escopado ao group (tenant de outro group → 404; groupId alheio → 403); recusa purgar o
   template do group (409). Resposta **200**: `{ ok, purged: { buckets_deleted, objects_deleted } }`.
+- **Resposta 202** `{ ok, pendente: true, message }` (29/09/2026): a remoção não terminou na hora
+  e termina sozinha em alguns minutos, sem a equipe. O acesso ao tenant já está encerrado na
+  resposta. Trate 200 e 202 como sucesso; não repita a chamada em laço.
 - Storage: os **arquivos são apagados de verdade** (o purge chama o storage-api `/empty` do
   bucket → remove objetos + blobs do disco), não só a metadata. Sobra no máximo um diretório
   VAZIO (sem dado) — cruft cosmético, não é gap de LGPD.
+- **O slug não volta (29/09/2026).** Depois do purge, provisionar de novo com o mesmo slug
+  responde **409 `slug_taken`**: as chaves do tenant apagado eram presas a esse slug, então
+  ele fica aposentado de vez. Para o mesmo cliente voltar, use outro slug (o `external_id`
+  pode ser o mesmo). O rollback de um provisionamento que falhou NÃO aposenta: repetir a
+  chamada com o mesmo slug continua valendo.
 
 ## Isolamento (verificado adversarialmente)
 Cada tenant é 1 schema + 1 owner role confinado. Provado: a pmk de um tenant não toca
@@ -166,9 +177,16 @@ tem upgrade que resolva.
 
 ## Template em banco dedicado (28/09/2026)
 
-`POST /groups/v1/{groupId}/tenants` pode responder `409 template_indisponivel`
-em dois casos, e nos dois nada é criado. Não é falha momentânea: repetir a
-chamada não resolve.
+`POST /groups/v1/{groupId}/tenants` pode responder `409 template_indisponivel`,
+e nada é criado. Quando a recusa se resolve sozinha, a resposta traz
+`Retry-After` (e `error.tentar_em_segundos`): espere e repita com o mesmo slug.
+
+- **Group recém-criado (ou template trocado) com template em banco dedicado.**
+  A cópia de estrutura de onde os tenants nascem é montada sozinha em até
+  1 minuto (`Retry-After: 60`). É o caso de todo projeto novo usado como
+  template logo depois de criado.
+- **O template mudou.** A cópia é realinhada sozinha em até 30 minutos
+  (`Retry-After: 1800`); se continuar depois disso, fale com o suporte.
 
 - **O projeto template foi excluído.** Publique uma versão nova a partir da
   fonte (`POST /platform/v1/groups/:id/template/publish`) ou aponte o group para
@@ -176,6 +194,4 @@ chamada não resolve.
   projeto que é template ou fonte de group ativo é recusada (`409
   template_protected` / `source_protected`), então isso só acontece com group
   antigo.
-- **O template roda num banco dedicado e a estrutura usada para clonar não está
-  alinhada com ele.** Peça ao suporte para alinhar o template, e a mesma chamada
-  volta a funcionar.
+- (Sem `Retry-After`, repetir não resolve: é o caso do template excluído acima.)

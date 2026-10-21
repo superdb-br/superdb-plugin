@@ -4,9 +4,10 @@ Do zero a um app que faz login, lê e grava dados — com a segurança certa des
 primeira tabela. Cada passo abaixo foi rodado contra a plataforma; onde algo não
 funciona, está escrito que não funciona.
 
-**Antes de começar, saiba o que vem de fábrica:** tabela criada por SQL nasce
-**sem RLS e legível pela anon key**. O passo 4 existe por causa disso e não é
-opcional. Detalhe completo em `references/lgpd.md`.
+**Antes de começar, saiba o que vem de fábrica:** toda tabela nasce com **RLS
+ligada e sem policy**: o app recebe `[]` e todo INSERT é recusado até você
+escrever as policies. O passo 4 existe por causa disso e não é opcional.
+Detalhe completo em `references/lgpd.md`.
 
 ---
 

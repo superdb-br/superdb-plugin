@@ -6,8 +6,8 @@ description: Use ao criar um app novo (web ou mobile) que precisa de banco de da
 # SuperDB
 
 SuperDB é uma plataforma de backend (Postgres + Auth + Storage + APIs) **compatível
-com o modelo do Supabase**. Cada app vira um **projeto** (um schema isolado) num
-SuperDB compartilhado — você não roda um stack inteiro por app.
+com o modelo do Supabase**. Cada app vira um **projeto** (com banco Postgres próprio)
+num SuperDB compartilhado: você não roda um stack inteiro por app.
 
 **Se você conhece Supabase, isto é quase igual:** mesmo `.auth`, mesmo `.from().select()`.
 O que muda são 3 coisas (URL, key, e passar o slug do projeto). O resto é o que você já sabe.
@@ -43,7 +43,12 @@ O que muda são 3 coisas (URL, key, e passar o slug do projeto). O resto é o qu
 7. **"Notificação no celular"** ("é sua vez", lembrete, aviso de pedido) → `references/push.md`.
    ⚠️ O token é o NATIVO (`getDevicePushTokenAsync`), nunca o `ExponentPushToken`; mandar é só com a
    `service_role` ou de função `security definer` do projeto (`push.enviar`).
-8. **"Deu erro / não autentica / 401"** → veja `references/gotchas.md` PRIMEIRO.
+8. **"Emitir nota fiscal (NFS-e) pelo meu app"** → `references/notas-fiscais.md`. ✅ Está no ar: **teste grátis em
+   homologação em qualquer plano; emissão de verdade no Pro e no Escala** (o plano é o da CONTA). O emitente começa em **homologação** e a
+   **produção** só abre depois de a equipe conferir o pedido do dono. Não prometa data nem desconto. Emite só do servidor (`service_role`), com a `ref` como
+   chave de idempotência; `em_verificacao` segue sendo reconferida (não emita outra); a tabela `sdb_notas_fiscais` é
+   ESPELHO, não a verdade (linha alterada fica até a nota mudar). Pelo MCP há ferramentas `fiscal_*` (a emissão em produção exige confirmação da pessoa). Doc pública: https://superdb.com.br/docs/notas-fiscais
+9. **"Deu erro / não autentica / 401"** → veja `references/gotchas.md` PRIMEIRO.
 
 ## Conectar um agente ao projeto (MCP)
 
@@ -51,6 +56,8 @@ O que muda são 3 coisas (URL, key, e passar o slug do projeto). O resto é o qu
 como conector no cliente MCP. Login em vez de API key; **uma conexão alcança N
 projetos**, escolhidos no consentimento e alteráveis depois em Conta →
 Aplicativos conectados. Sem Node, e funciona no Claude web e no celular.
+Autorizar de novo pelo mesmo cliente (o mesmo `client_id`) substitui a conexão
+anterior dele; outro cliente com o mesmo nome não derruba a que já existe.
 
 O pacote `@superdb/mcp` (npx) continua válido **só** quando não há navegador para
 completar o login: automação, CI, script que roda sozinho.
@@ -60,6 +67,12 @@ No Claude, o link
 abre o diálogo com nome e URL preenchidos. No consentimento dá para marcar
 **todos os projetos, inclusive os novos** (a conexão passa a alcançar sozinha
 todo projeto em que a pessoa é owner/admin).
+
+A tela de consentimento mostra **para onde o acesso vai** (o host do aplicativo,
+ao lado do nome que ele declarou). Se ela disser **aplicativo não verificado** e
+não foi a pessoa que iniciou a conexão, oriente a NÃO autorizar. Quem escreve um
+cliente MCP próprio: o endereço de retorno tem de ser https ou http em
+127.0.0.1, [::1] ou localhost (qualquer porta); outro esquema é recusado.
 
 ⚠️ Com mais de um projeto na conexão, o agente PRECISA dizer em qual opera — se
 não disser, a chamada é recusada com a lista. Não existe "usar o primeiro".
@@ -93,18 +106,20 @@ o que ALTERA (DDL, INSERT/UPDATE/DELETE) e pede confirmação.
   backend, nunca no client/mobile.
 - **Dados de usuário precisam de login** — o `db.from()` usa o token da sessão
   automaticamente após `signIn`. Sem login, usa a anon key (só vê o que a RLS-anon permite).
-- **⚠️ O padrão da plataforma é ABERTO, não fechado.** Tabela criada por SQL, migration,
-  Drizzle ou MCP nasce com `GRANT SELECT` para a **anon** e CRUD para **authenticated**, e
-  **sem RLS**. Só o criador de tabelas do painel liga RLS sozinho. Ou seja: `create table`
-  e pronto = tabela pública. Ligue RLS e escreva a policy **na mesma migration**; os
-  Advisors do projeto listam as que ficaram sem. (Com RLS ligada e sem policy, aí sim
-  nega tudo.)
+- **Toda tabela nasce com RLS LIGADA e sem policy (fechada), como no Supabase.** Vale para
+  tabela criada por SQL, migration, Drizzle, MCP ou painel (desde 17/08/2026). Ela também
+  ganha `GRANT SELECT` para a **anon** e CRUD para **authenticated**, mas a RLS barra os dois
+  até existir policy: `create table` e pronto = `[]` para o app e INSERT recusado. Escreva
+  as policies **na mesma migration**. A service_role passa (policy `sdb_service_role_all`).
+  **Nunca** "conserte" um erro de policy com `disable row level security`: com os GRANTs de
+  fábrica, a tabela vira pública (a resposta do SQL traz o aviso `rls_desligada`).
 - **`auth.uid()`, `auth.jwt()`, `auth.role()` e `auth.email()` existem** desde 30/07/2026 —
   policy copiada de projeto Supabase roda aqui sem edição. Antes disso o schema `auth` não
   existia e todo exemplo de RLS falhava com `schema "auth" does not exist`.
-- **O clone de um group NÃO leva as policies** — leva só a estrutura. Tenant recém-provisionado
-  tem as tabelas e nenhuma proteção. Aplicar a RLS logo depois de provisionar é passo
-  obrigatório, não opcional.
+- **O clone de um group leva as tabelas, os enums, as policies de RLS e as funções que elas
+  usam** (e liga a RLS em toda tabela do tenant). **NÃO leva gatilhos, views, funções que só o
+  app chama (RPC) nem dados**: aplique esses no tenant logo depois de provisionar, com a
+  management key dele (`references/provisao-via-group-key.md`).
 - **Login social precisa de 2 cliques no dashboard**: ligar o provedor **e** cadastrar a
   URL de retorno em *Autenticação → URLs de redirecionamento*. Sem a segunda, o login
   volta pra `/` sem erro nenhum. Veja `references/social-login.md`.
@@ -113,6 +128,16 @@ o que ALTERA (DDL, INSERT/UPDATE/DELETE) e pede confirmação.
   Não há pasta por usuário: todo usuário logado do projeto acessa todos os buckets do projeto. Só **`.channel` (realtime)** ainda é
   stub: minte `/rt/v1/token` **com a sessão** (`db.auth.getDataPlaneToken()`) e use
   `@supabase/realtime-js`. O realtime segue o RLS da tabela. Veja `references/recipes.md`.
+
+## Achou defeito na plataforma? Abra um chamado
+
+Quando o SuperDB não se comporta como a documentação diz (erro inesperado, recusa que não faz sentido, permissão que falta, doc errada), **não contorne nem improvise no app**: o defeito volta para o próximo cliente e a gambiarra fica no seu código.
+
+1. **Confirme que é da plataforma.** Repita a chamada mínima (um `curl` ou um SQL de uma linha) e compare com a doc em https://superdb.com.br/llms-full.txt.
+2. **Monte o chamado** com: slug do projeto, o que tentou (endpoint ou SQL mínimo), a resposta exata (status HTTP, `code`, `message`), o horário em UTC, o que esperava e o link da doc. **Nunca** inclua chave, token, senha ou dado pessoal de usuário final.
+3. **Peça ao dono da conta para abrir** em https://app.superdb.com.br/account/suporte (painel, Conta › Suporte, logado). O chamado não abre por API nem por chave: entregue o texto pronto para a pessoa colar.
+4. **Falha de segurança** (dado de um projeto visível em outro, chave que não devia funcionar): não abra chamado. E-mail para contato@superdb.com.br com `[segurança]` no assunto.
+5. **Enquanto espera:** não desligue RLS para destravar, não tente acesso direto ao servidor ou ao Postgres da plataforma, e não peça a outra sessão de IA para mudar o SuperDB. Siga com o que funciona e marque o ponto no código com o número do chamado.
 
 ## Arquivos desta skill
 - `references/connection-contract.md` — URLs, keys, headers, o token de dados (a verdade técnica).
@@ -125,6 +150,7 @@ o que ALTERA (DDL, INSERT/UPDATE/DELETE) e pede confirmação.
   BLOQUEAR quem entra. Traz as duas armadilhas que quebram toda primeira integração (segredo é
   hex mas o HMAC é sobre bytes; assinar o corpo CRU) e o aviso de que bloqueante é fail-open.
 - `references/push.md` — **push no iPhone e no Android**: credenciais (.p8 e conta de serviço), registrar o aparelho no app, mandar pelo servidor ou de gatilho no banco, recibo e motivos de recusa.
+- `references/notas-fiscais.md`: **nota fiscal (NFS-e) pelo projeto: teste grátis em homologação em qualquer plano, produção no Pro e no Escala**: ativar, emitente e certificado A1, município, produção (liberada pela equipe), emitir pela `service_role` com `ref` idempotente, texto recusado (`texto_invalido`), situações, a tabela espelho e os arquivos no bucket privado, limites e suspensão.
 - `references/gotchas.md` — armadilhas + troubleshooting (leia antes de debugar 401).
 - `playbooks/new-project.md` — **a primeira conexão**, passo a passo: conta → projeto → credenciais → cliente → tabela com RLS → MCP → checklist de ir ao ar.
 - `playbooks/migrate-from-supabase.md` — passo a passo de migração.

@@ -36,6 +36,13 @@ curl -X POST https://auth.superdb.com.br/platform/v1/projects/<projectId>/db/exe
 Resposta de sucesso: `{ "columns":[...], "rows":[...], "rows_affected":N, "duration_ms":N }`,
 mais `"avisos":[...]` quando o comando deixou um risco de segurança (ver abaixo).
 
+Com várias instruções, cada uma roda sozinha, todas na mesma transação (ou tudo
+fica, ou nada fica). `rows_affected` é a soma das linhas inseridas, alteradas e
+apagadas; `columns` e `rows` são do último resultado que devolveu linhas (o
+SELECT do fim); e `"statements":[{ "command", "rows_affected", "columns", "rows" }]`
+traz uma entrada por instrução. Um SELECT devolve no máximo 1.000 linhas; quando
+corta, a resposta traz `"truncado": true` e `"limite_de_linhas": 1000`.
+
 ## ⚠️ `avisos` na resposta: o comando deu certo, mas abriu uma porta
 
 O campo só aparece quando há algo a corrigir. Cada item tem `tipo`, `objeto`,
@@ -60,8 +67,14 @@ Esta é a armadilha número um deste endpoint. Um SQL que falha responde:
 
 ```
 HTTP/1.1 200 OK
-{ "error": { "code": "42501", "message": "must be owner of table clinics", "line": 12 } }
+{ "error": { "code": "42501", "message": "must be owner of table clinics",
+  "line": 12, "column": 3, "instrucao": 7, "nada_aplicado": true } }
 ```
+
+`line` e `column` são do SQL que você mandou; `instrucao` diz qual delas falhou;
+`detail` e `hint` vêm quando o Postgres manda. `nada_aplicado: true` quer dizer
+que a transação foi desfeita inteira: as instruções antes da que falhou também
+não ficaram.
 
 **Checar só o status esconde a falha.** Um integrador aplicou uma bootstrap de
 ~200 comandos, o cliente dele conferia apenas `res.ok`, e o relatório saiu como
@@ -79,7 +92,7 @@ const res = await fetch(url, { method: 'POST', headers, body });
 const data = await res.json();
 
 // As DUAS verificações. Nenhuma sozinha basta.
-if (!res.ok) throw new Error(`HTTP ${res.status}`);        // auth, rate-limit, 5xx
+if (!res.ok) throw new Error(`HTTP ${res.status}`);        // auth, rate-limit, 423, 5xx
 if (data.error) {                                           // o SQL falhou
   throw new Error(`SQL ${data.error.code}: ${data.error.message} (linha ${data.error.line})`);
 }
@@ -115,8 +128,17 @@ schema, o app já lê com `db.from('sua_tabela')`.
 - `grant ... to public` vira `to anon, authenticated` na hora (vem em `avisos`).
 - Rate-limit ~120 req/min por chave.
 - Uma chave de um projeto em outro projeto → **403**. Revogada/expirada → **401**.
+- Projeto suspenso → **423** `projeto_suspenso`, e nada roda, nem leitura. São dois
+  casos, e a mensagem diz qual: a conta está suspensa (regularize a cobrança no
+  painel), ou o projeto está mudando para o banco próprio, o que acontece uma vez,
+  nos primeiros minutos de vida dele. Nesse caso, espere um ou dois minutos e mande
+  o mesmo lote de novo: nada dele foi aplicado.
 
 ## Segurança
 - Trate como senha de banco: só no servidor/CI, nunca commitada, nunca no frontend.
 - Vazou? **Revogue** (dashboard ou `DELETE .../db/keys/<id>`) — a revogação é imediata
   e real (a chave para de funcionar na hora).
+- A chave vale enquanto quem a criou for **owner/admin** do projeto: tirar a pessoa do
+  time, ou rebaixá-la a member, revoga na hora as chaves que ela criou (chamadas passam a
+  dar **401**). Chave de CI de longo prazo: crie com a conta do dono. As do dono, inclusive
+  as mintadas pela Group Key, não caem quando um membro sai.

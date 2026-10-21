@@ -20,9 +20,14 @@ Siga `playbooks/new-project.md` passo 1 (criar projeto no dashboard, pegar slug 
    simples: no SQL Editor do dashboard do SuperDB, cole os `CREATE TABLE` / `CREATE POLICY`
    das SUAS tabelas (o editor já roda dentro do schema do projeto). Pule extensões/roles do
    Supabase (auth.users, storage.*, etc. — o SuperDB tem os próprios).
-3. **RLS**: recrie as políticas. Atenção ao identificador do usuário: no Supabase é
-   `auth.uid()`; no SuperDB use `(current_setting('request.jwt.claims', true)::json->>'sub')`.
-   (Crie um helper SQL `app.uid()` se quiser deixar igual.)
+3. **RLS**: recrie as políticas. `auth.uid()`, `auth.jwt()` e `auth.role()` existem e se
+   comportam como no Supabase, então a policy copiada roda sem edição. O que muda: não existe
+   `auth.users` (a FK aponta para `proj_<slug>.auth_users`), e o token não carrega
+   `app_metadata`/`user_metadata` (papel e permissão saem de uma tabela sua).
+4. **Sem `pg_net` e sem `pg_cron`**: os **Database Webhooks** (gatilho que chama
+   `net.http_post`) não migram, nem função que chame `net.http_*`. Passe a chamada para a
+   aplicação (depois de gravar) ou para um worker que lê uma tabela de eventos preenchida por
+   um gatilho. Agendamento fica fora do banco, chamando uma função via RPC.
 
 ## 3. Mover os dados (linhas)
 ```bash

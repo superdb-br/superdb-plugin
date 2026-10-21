@@ -12,32 +12,34 @@ que a maior parte das obrigações é sua — a plataforma dá as ferramentas.
 
 ---
 
-## ⚠️ Leia isto antes de qualquer outra coisa: RLS **não** vem ligada
+## ⚠️ Leia isto antes de qualquer outra coisa: RLS vem ligada, e é a policy que abre
 
-Esta é a pegadinha que mais custa caro, e ela é contraintuitiva se você vem do
-Supabase.
-
-Quando você cria uma tabela **por SQL** (`/db/exec`, Editor SQL, migration, MCP),
-um event trigger da plataforma roda e faz o seguinte:
+Quando você cria uma tabela, por SQL (`/db/exec`, Editor SQL, migration, MCP) ou
+pelo painel, um event trigger da plataforma roda e faz o seguinte (desde
+17/08/2026; medido de novo em produção em 19/10/2026):
 
 ```sql
 GRANT SELECT                        ON <tabela> TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON <tabela> TO authenticated, service_role;
--- e NÃO executa ENABLE ROW LEVEL SECURITY
+ALTER TABLE <tabela> ENABLE ROW LEVEL SECURITY;
+CREATE POLICY sdb_service_role_all ON <tabela> TO service_role USING (true) WITH CHECK (true);
 ```
 
-Ou seja: **a tabela nasce legível pela anon key**, que é pública e vai no bundle
-do seu app, no navegador de qualquer visitante. Sem RLS, qualquer pessoa que
-abra o seu site lê a tabela inteira.
+Ou seja: **a tabela nasce fechada**, como no Supabase. A anon key e os usuários
+logados recebem `[]` e têm o INSERT recusado até você escrever as policies.
 
-A única exceção é a tabela criada pelo **formulário de nova tabela do painel**,
-que liga RLS para você.
+O risco está em DESLIGAR a RLS. Com os GRANTs acima, `disable row level
+security` deixa a tabela legível pela anon key, que é pública e vai no bundle do
+seu app, no navegador de qualquer visitante. É o "conserto" clássico de quem
+tomou erro de policy num insert, e a plataforma avisa na resposta do comando
+(`rls_desligada`).
 
-**Então, em toda tabela que você criar por SQL:**
+**Então, em toda tabela que você criar, escreva as policies na mesma migration:**
 
 ```sql
 CREATE TABLE pacientes ( ... );
 
+-- já vem ligada; repetir deixa a migration explícita e serve para outro Postgres
 ALTER TABLE pacientes ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "dono lê o próprio" ON pacientes
@@ -59,8 +61,12 @@ As funções de contexto (`auth.uid()`, `auth.role()`, `auth.email()`,
 
 ## O que a plataforma entrega
 
-**Residência no Brasil.** O Postgres, o storage e os backups ficam em São Paulo.
-Isso é o que sustenta responder "os dados não saem do país" numa due diligence.
+**Residência no Brasil.** O Postgres, o storage e os backups ficam em São Paulo
+(backups cifrados no servidor do SuperDB e guardados na AWS S3, região de São
+Paulo). Isso sustenta responder "banco, arquivos e backups ficam no Brasil" numa
+due diligence. Não diga "nada sai do país": e-mails transacionais (Resend, EUA),
+SMS (Twilio, EUA) e login social (Google, GitHub, Apple, Microsoft) saem, quando
+o cliente os ativa.
 
 **Isolamento por projeto, no banco.** Cada projeto é um schema `proj_<slug>` com
 role própria (`proj_<slug>_owner`), confinada: ela não enxerga schema de outro
@@ -90,19 +96,36 @@ nascer na sua aplicação, não no log do banco.
 curl -X DELETE "$SUPERDB_URL/groups/v1/$GROUP_ID/tenants/$SLUG/purge" \
   -H "Authorization: Bearer $GROUP_KEY"
 
-# A sua própria conta de plataforma (cadastro, sessões, CPF/CNPJ, cartões)
+# A sua própria conta de plataforma (cadastro, sessões, CPF/CNPJ, cartões).
+# Exige o e-mail da conta e o aceite do termo de exclusão.
 curl -X DELETE "$SUPERDB_URL/platform/v1/me" \
-  -H "Authorization: Bearer $SESSAO"
+  -H "Authorization: Bearer $SESSAO" \
+  -H "Content-Type: application/json" \
+  -d '{"confirmacao": "voce@empresa.com.br", "aceito_termo": true}'
 ```
 
-O `purge` é hard-delete atômico — não é soft delete com flag. O `DELETE /me`
+O `purge` é hard-delete atômico, não soft delete com flag. Quando a remoção não termina
+na hora, a resposta vem **202** com `pendente: true`: o acesso já fechou, e os dados saem
+sozinhos em alguns minutos. O slug purgado não volta a ser usado (`409 slug_taken`). O projeto
+avulso (fora de group) tem o mesmo caminho no painel: Excluir projeto e, depois, "Liberar
+espaço" em Projetos apagados. O `DELETE /me`
 recusa com **409** enquanto você tiver projeto ativo, e diz quais: apagar a sua
-conta não pode arrastar junto o dado dos usuários finais dos seus clientes.
-Também dá para fazer pelo painel, em **Minha conta → Seus dados**.
+conta não pode arrastar junto o dado dos usuários finais dos seus clientes. Sem
+o e-mail certo e o `aceito_termo: true` no corpo, a resposta é **400**
+`confirmacao_necessaria` e nada acontece. Assinatura ativa é cancelada no
+provedor de pagamento na hora, sem reembolso proporcional; se o provedor não
+responder, a resposta é **502** `provider_cancel_failed` e nada é apagado, e
+tentar de novo é seguro. Também dá para fazer pelo painel, em **Minha conta →
+Seus dados**, que mostra o termo antes.
 
-O que **não** sai no apagamento, de propósito: os registros de auditoria. É
-obrigação legal concorrente (art. 16, I) e eles guardam identificador, não
-documento.
+O que **não** sai no apagamento, de propósito, porque é obrigação legal
+concorrente (art. 16, I):
+
+- As faturas pagas (e as estornadas), guardadas por 5 anos pela lei fiscal (CTN
+  art. 173 e 195), só com valor, datas, plano, status e o código do pagamento e
+  do cliente no provedor. Sem nome, CPF/CNPJ ou e-mail: o cadastro fiscal do
+  pagador fica com o provedor de pagamento.
+- Os registros de auditoria, que guardam identificador, não documento.
 
 **Acesso e portabilidade (art. 18, II e V).** O par do apagamento — um responde
 "o que vocês têm de mim", o outro "tirem tudo":
@@ -160,8 +183,8 @@ são obrigações suas, e nenhuma delas é técnica.
 ## Para responder ao seu cliente
 
 Quando um cliente seu perguntar "onde ficam os dados e quem acessa": os dados
-ficam em São Paulo, num schema isolado por cliente, com role de banco confinada
-a ele; CPF e CNPJ ficam cifrados; existe trilha de auditoria encadeada com
+ficam em São Paulo (backups inclusive), num banco de dados próprio do projeto, com role de banco
+confinada a ele; CPF e CNPJ ficam cifrados; existe trilha de auditoria encadeada com
 retenção pelo plano; e o apagamento é definitivo, com endpoint próprio. O que a
 plataforma **não** tem é certificação formal — e dizer isso na hora certa vale
 mais do que a certificação valeria.

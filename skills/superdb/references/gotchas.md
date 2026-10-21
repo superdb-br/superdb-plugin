@@ -32,6 +32,18 @@ O SuperDB avisa na resposta do próprio comando quando ele deixou um risco (camp
   `PUBLIC` num banco compartilhado inclui os papéis de todos os projetos. O acesso do app pela
   API não muda; escreva direto `to anon, authenticated`.
 
+## `net.http_post`, Database Webhook ou `pg_cron` não funcionam
+**`pg_net` e `pg_cron` não estão disponíveis** no banco de cada projeto. `net.http_post` não chama URL
+nenhuma aqui, e os **Database Webhooks do Supabase** (um gatilho em cima do `pg_net`) não
+migram: o gatilho do webhook não é recriado. Não proponha nenhum dos dois.
+- Chamar uma URL quando uma linha muda: a **aplicação** chama logo depois de gravar, ou um
+  gatilho grava o evento numa tabela sua e um **worker** (backend, Cloudflare Worker) lê essa
+  tabela e chama a URL.
+- Tarefa agendada: o agendador fica **fora** do banco (cron do backend, Cron Triggers) e chama
+  uma função via RPC.
+- Extensões que vêm instaladas: `vector` (pgvector), `postgis`, `pgcrypto`, `pg_trgm`, `citext`,
+  `unaccent`, `uuid-ossp`.
+
 ## `.channel` (realtime) joga erro
 - `.storage` **funciona** (`db.storage.from('proj_<slug>_<bucket>').upload/...` — minta `/st/v1/token` sozinho).
   O nome do bucket é o COMPLETO: com o curto (`from('avatars')`) o Storage não acha o bucket.
@@ -147,6 +159,11 @@ mágico ou login social não tem senha: manda só `{ new_password }` e a respost
 `criada: true`. Conta que já tem senha manda também `current_password` (sem ela: 400
 `current_password_required`) e as outras sessões caem. Durante o "entrar como" do painel,
 criar é recusado (403). Não existe `updateUser({ password })` no SDK: use a rota.
+
+Com a conferência de senha vazada (HIBP) ligada no projeto, a senha nova que aparece em
+vazamento conhecido volta **400 `password_breached`**: no cadastro, aqui e em
+`POST /auth/v1/password/reset`. Na redefinição a conferência vem antes de gastar o token, então
+o mesmo link aceita outra senha. Trate o código na tela e peça outra senha.
 
 ## Link mágico: a sessão chega no fragmento, sem o data_plane_token
 O link volta para `redirect_to#access_token=…&refresh_token=…`. Passe os dois para
