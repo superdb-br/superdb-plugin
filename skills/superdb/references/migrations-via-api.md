@@ -40,8 +40,21 @@ Com várias instruções, cada uma roda sozinha, todas na mesma transação (ou 
 fica, ou nada fica). `rows_affected` é a soma das linhas inseridas, alteradas e
 apagadas; `columns` e `rows` são do último resultado que devolveu linhas (o
 SELECT do fim); e `"statements":[{ "command", "rows_affected", "columns", "rows" }]`
-traz uma entrada por instrução. Um SELECT devolve no máximo 1.000 linhas; quando
-corta, a resposta traz `"truncado": true` e `"limite_de_linhas": 1000`.
+traz uma entrada por instrução.
+
+**Limite de 1000 linhas.** Todo SELECT sem `LIMIT` recebe `LIMIT 1000`. Quando
+havia mais linhas, `rows` traz só as primeiras 1000 e a resposta avisa: cabeçalho
+HTTP `X-SuperDB-Truncado: 1000` e, no começo do JSON (antes de `rows`),
+`"truncado": true`, `"limite_de_linhas": 1000` e
+`"avisos_do_resultado": [{ "tipo": "linhas_cortadas", "mensagem", "como_corrigir" }]`.
+No MCP, a primeira linha da resposta diz o mesmo. `avisos_do_resultado` não é
+`avisos` (esse é só de segurança). Sem corte, nada disso aparece. Para ler tudo,
+pagine em páginas de até 1000 (com `LIMIT` explícito o corte automático não se aplica):
+
+```sql
+select * from pacientes order by id limit 1000 offset 1000;   -- LIMIT/OFFSET, página 2
+select * from pacientes where id > 1000 order by id limit 1000; -- keyset: último id da página anterior
+```
 
 ## ⚠️ `avisos` na resposta: o comando deu certo, mas abriu uma porta
 

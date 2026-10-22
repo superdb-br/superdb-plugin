@@ -8,7 +8,7 @@ homologação (sem valor fiscal). O Pro emite até 100 NFS-e por mês em 1 CNPJ,
 CNPJs, também em produção. Pedir produção (ou emitir por um emitente em produção) num plano sem produção dá
 `403 fiscal_fora_do_plano` com `"ambiente": "producao"` e `upgrade_url`: o usuário muda o plano da CONTA no
 painel. No painel, a tela Notas fiscais tem um guia de instalação em 7 passos, com um botão de nota de teste
-(dados de exemplo, tomador PJ pública). Não há cobrança por nota nem de
+(dados de exemplo, tomador PJ pública com o endereço público da sede). Não há cobrança por nota nem de
 excedente: acima da cota do mês a emissão é recusada até o dia 1º. Todo emitente nasce em **homologação**
 (sem valor fiscal) e só passa a **produção** depois de a equipe do SuperDB conferir o pedido que o dono faz no
 painel (o dono recebe um e-mail quando é liberada). Emite **NFS-e do padrão nacional** (nota de serviço),
@@ -54,7 +54,9 @@ enviado, motor fora) não impede de salvar, e a resposta traz um `aviso`: consul
 curl -X POST https://auth.superdb.com.br/fiscal/v1/nfse \
   -H "Authorization: Bearer $SUPERDB_SERVICE_ROLE_KEY" -H "Content-Type: application/json" \
   -d '{ "ref": "pedido-1042",
-        "tomador": { "cnpj": "11222333000181", "nome": "Cliente Exemplo LTDA", "email": "financeiro@cliente.example" },
+        "tomador": { "cnpj": "11222333000181", "nome": "Cliente Exemplo LTDA", "email": "financeiro@cliente.example",
+                     "endereco": { "logradouro": "Rua Exemplo", "numero": "100", "bairro": "Centro",
+                                   "codigo_municipio": "3550308", "cep": "01001000" } },
         "servico": { "valor": 150.00 } }'
 # 202 { "id": "...", "situacao": "pendente", "ref_repetida": false }
 ```
@@ -65,8 +67,15 @@ curl -X POST https://auth.superdb.com.br/fiscal/v1/nfse \
   o mesmo pedido devolve a mesma nota (`200`, `ref_repetida: true`); a mesma `ref` com outro pedido dá
   `409 ref_reusada`. Para refazer uma nota recusada, **outra `ref`**.
 - `emitente` (CNPJ, 14 dígitos) é opcional com um só emitente. `competencia` (`AAAA-MM-DD`) padrão: hoje; depois de hoje dá `422 competencia_futura`. Projeto sem ativação dá `403 fiscal_inativo`.
-- `tomador`: `cpf` ou `cnpj` (um só), `nome`, `email`, `endereco`. `servico.valor` em reais (mínimo 1 centavo, até
-  2 casas, abaixo de R$ 10 milhões); qualquer campo do serviço padrão pode ser trocado na nota.
+- `tomador`: `cpf` ou `cnpj` (um só), `nome`, `email` (opcional) e `endereco` (`logradouro`, `numero`,
+  `complemento` opcional, `bairro`, `codigo_municipio` com os 7 dígitos do IBGE, `cep` com 8 dígitos).
+  `servico.valor` em reais (mínimo 1 centavo, até 2 casas, abaixo de R$ 10 milhões); qualquer campo do serviço
+  padrão pode ser trocado na nota.
+- ⚠️ **Tomador com endereço é obrigatório** (reforma tributária, IBS e CBS): em **homologação desde já** e em
+  **produção a partir de 01/01/2027**. A nota leva o grupo do IBS e da CBS, e a Receita exige o tomador com CPF ou
+  CNPJ e endereço nacional completo (`E0239`). Sem tomador ou sem endereço, o SuperDB Fiscal recusa na hora com
+  `422 tomador_sem_endereco`. Escreva o app já mandando o endereço do tomador. O tomador não pode ser o próprio
+  emitente (`422 tomador_igual_ao_prestador`; a Receita recusa com `E0202`).
 - Campo que o SuperDB Fiscal ainda não aceita (desconto, retenções, local de prestação) é **recusado com o
   nome**, não ignorado.
 - Prévia (sem emitir, sem gravar, sem contar): `POST /fiscal/v1/nfse/previa`. Consulta:
@@ -108,7 +117,10 @@ automaticamente; não emita outra nota no lugar**, podem sair duas; há casos qu
 Recusas comuns: `E0312` (código de tributação não aceito pelo município, ou falta o municipal de 3 dígitos: corrija o cTribMun no serviço padrão; depois da correção, a próxima nota com o código corrigido não é mais barrada pelo motor; quem decide é a prefeitura no Sistema Nacional. Repetir o mesmo código continua barrado até o motor confirmar no ADN que o município o administra ou o suporte liberar),
 `E0014` (número da DPS repetido; o usuário fala com o suporte do SuperDB, que ajusta o próximo número da DPS), `E0018` (competência antes da abertura do CNPJ ou da opção pelo Simples),
 `E0116`/`E0120` (inscrição municipal exigida ou não aceita), `E0625` (ME/EPP do Simples sem retenção não leva
-alíquota de ISS), `producao_nao_liberada`, `tenant_suspenso`.
+alíquota de ISS), `E0239` e `tomador_sem_endereco` (falta o endereço completo do tomador: mande o `endereco` e
+emita de novo com outra `ref`), `E0855` (a Receita exige o grupo do IBS e da CBS, que é montado pelo motor e não
+pelo pedido: o usuário fala com o suporte), `E0202` (tomador igual ao prestador), `producao_nao_liberada`,
+`tenant_suspenso`.
 
 ## A tabela e os arquivos
 

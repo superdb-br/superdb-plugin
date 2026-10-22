@@ -30,6 +30,9 @@ O que muda são 3 coisas (URL, key, e passar o slug do projeto). O resto é o qu
 
 1. **"Criar um app/projeto novo"** → siga `playbooks/new-project.md`
    (provisiona no dashboard → pega as keys → cola o cliente → pronto).
+   Se o app é de **agendamento** (salão, clínica), **mini ERP** (estoque, ordem de serviço, nota fiscal)
+   ou **delivery** (pedidos ao vivo), parta do roteiro testado em https://superdb.com.br/aprenda/ :
+   o SQL com RLS e as funções `src/lib` de lá já rodaram em produção.
 2. **"Migrar meu projeto Supabase pro SuperDB"** → siga `playbooks/migrate-from-supabase.md`.
 3. **"Como faço X (login, ler/gravar dados, mobile)"** → veja `references/recipes.md`.
 4. **"Login com Google/GitHub/Apple"** (web ou mobile) → `references/social-login.md`.

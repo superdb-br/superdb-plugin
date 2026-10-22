@@ -52,6 +52,17 @@ migram: o gatilho do webhook não é recriado. Não proponha nenhum dos dois.
   Não fixe o endereço no código: o socket é do projeto (`wss://<slug>-rt.superdb.com.br/socket`
   quando ele tem banco próprio).
 
+## Realtime recusa a conexão logo depois de ligar a primeira tabela
+Num projeto recém-criado, o Realtime do projeto é preparado quando a **primeira** tabela é ligada,
+e leva **até 3 minutos**. Até lá o socket é recusado. A ativação diz isso:
+- `POST /platform/v1/projects/<id>/realtime/enable` responde **202** com `pronto: false`,
+  `pronto_em_segundos` e `mensagem` (e o cabeçalho `Retry-After`) enquanto prepara, e **200** com
+  `pronto: true` quando já aceita conexão. `pronto: null` = não deu para saber; trate como pronto e
+  tente de novo se a conexão cair.
+- `GET .../realtime` mostra o mesmo em `connection.pronto`. Para um roteiro ou teste automático,
+  espere `connection.pronto === true` (ou reconecte com espera) antes de assinar o canal.
+- Depois de pronto, ligar outras tabelas é imediato.
+
 ## Realtime conecta mas não entrega nada
 O realtime **segue o RLS da tabela** com o papel de quem pediu o token (claim `sdb_role`):
 - Token pedido com a **anon key** recebe só o que um visitante sem login leria. Com usuário
