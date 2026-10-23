@@ -1,5 +1,5 @@
 {
-  "versao": "1be54898afd5a95965f0d478c7d4a0d9b62899b98c9de8fe00de20a59650d613",
+  "versao": "887b3aa48a8fabed7f1bd4c445e3e1daf2a7c92e81096d5993b8c3921c62e78e",
   "arquivos": [
     { "caminho": "SKILL.md", "sha256": "fcbdc7ebef20292ca1e6f9d50336266dfad0795b4af5b2f46a75c86698092d38", "tamanho": 13190 },
     { "caminho": "playbooks/migrate-from-supabase.md", "sha256": "dbe34fb8daab35b806859ca124be8a866ca19589dd9fb5a2a972c33bc4f9ea30", "tamanho": 5366 },
@@ -9,7 +9,7 @@
     { "caminho": "references/gotchas.md", "sha256": "552d6a05be98ac0ca4ffd36434e16d2825e468d5c8302c55b1de6b4d319d0c8e", "tamanho": 13071 },
     { "caminho": "references/lgpd.md", "sha256": "f7ac2fae9cd178661ff90001d4c756bf3c861033ef4b0363db66585e0676eb54", "tamanho": 9517 },
     { "caminho": "references/migrations-via-api.md", "sha256": "65f28471ee0010a25cb804d698792d6d828b3abafac8ec51bd6acc9b5f96d556", "tamanho": 8914 },
-    { "caminho": "references/notas-fiscais.md", "sha256": "a6b9b723b0e0f7034d2feb985f195a8520af650ca1e79ccd5b7b8f502f957104", "tamanho": 14311 },
+    { "caminho": "references/notas-fiscais.md", "sha256": "5288697b760d1389d911261a14858cb847c033d14e6cf3538e3e03e804088f85", "tamanho": 15293 },
     { "caminho": "references/provisao-via-group-key.md", "sha256": "6561cf84fc32231acd00665cf61cd2e379b514899c594ec1fe6b82729c3bb547", "tamanho": 10874 },
     { "caminho": "references/push.md", "sha256": "dae9d7725d763455ba5ae2ac0fd4cc20ff1269392513c1d0dd32037c128dfe0b", "tamanho": 5596 },
     { "caminho": "references/recipes.md", "sha256": "b7d55ff939ec5a639de3c1c9fe0d24ddd995c446defe57cac772b349b64ca804", "tamanho": 14179 },

@@ -114,6 +114,19 @@ bucket), `rejeitada` (veja `codigo_recusa`, `motivo`, `dica`), `erro`, `em_verif
 automaticamente; não emita outra nota no lugar**, podem sair duas; há casos que só a equipe resolve, e então o usuário fala com o suporte), `cancelamento_pendente`, `cancelada`. `rejeitada`,
 `erro` e `cancelada` não voltam atrás.
 
+**Avisos da emissão:** o motor fiscal pode aceitar a nota e avisar algo sobre o pedido, por exemplo que ignorou um
+`servico.ibscbs` inválido em produção antes de 01/01/2027 (depois dessa data o mesmo pedido é recusado). A nota
+ganha `avisos` (lista de textos em português) na consulta, na listagem, no SDK e no MCP (no topo da resposta). **O
+campo só existe quando há aviso**, e aparece depois que o SuperDB envia a nota ao motor: o `202` do `POST` (nota
+`pendente`) não o traz; consulte logo depois. A nota com aviso **segue valendo**: não emita outra no lugar; conte ao
+usuário, corrija o pedido das próximas e, para reenviar com o campo corrigido, use outra `ref`. Não vai para
+`sdb_notas_fiscais`.
+
+```json
+{ "id": "6f1c0d2e-...", "ref": "pedido-1234", "situacao": "processando",
+  "avisos": ["servico.ibscbs foi IGNORADO e não ficou na nota: o grupo IBSCBS ainda não vai na DPS de produção (só a partir de 01/01/2027) e o que veio é inválido (...)"] }
+```
+
 Recusas comuns: `E0312` (código de tributação não aceito pelo município, ou falta o municipal de 3 dígitos: corrija o cTribMun no serviço padrão; depois da correção, a próxima nota com o código corrigido não é mais barrada pelo motor; quem decide é a prefeitura no Sistema Nacional. Repetir o mesmo código continua barrado até o motor confirmar no ADN que o município o administra ou o suporte liberar),
 `E0014` (número da DPS repetido; o usuário fala com o suporte do SuperDB, que ajusta o próximo número da DPS), `E0018` (competência antes da abertura do CNPJ ou da opção pelo Simples),
 `E0116`/`E0120` (inscrição municipal exigida ou não aceita), `E0625` (ME/EPP do Simples sem retenção não leva
