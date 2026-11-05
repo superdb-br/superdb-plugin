@@ -24,7 +24,9 @@ Detalhe completo em `references/lgpd.md`.
 
 > Não existe provisionamento por CLI. O `@superdb/cli` nunca funcionou e não
 > está publicado. O caminho é o painel — ou, para SaaS multi-cliente, a Group
-> API Key (`references/provisao-via-group-key.md`).
+> API Key (`references/provisao-via-group-key.md`). Com o MCP remoto já
+> conectado, o agente cria os próximos projetos com `superdb_criar_projeto`
+> (mesmas regras do painel; a conexão pede uma conta com pelo menos um projeto).
 
 ## 2. Pegar as credenciais
 

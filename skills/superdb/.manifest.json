@@ -1,9 +1,9 @@
 {
-  "versao": "887b3aa48a8fabed7f1bd4c445e3e1daf2a7c92e81096d5993b8c3921c62e78e",
+  "versao": "00f58f83c111a9a0d1836f542b22638ea692213d072ff1b100681b7fd93f2d55",
   "arquivos": [
-    { "caminho": "SKILL.md", "sha256": "fcbdc7ebef20292ca1e6f9d50336266dfad0795b4af5b2f46a75c86698092d38", "tamanho": 13190 },
+    { "caminho": "SKILL.md", "sha256": "4f3f72d54101027f1d926a50bc43d71498f828716ff2043fd99f203ff718dea3", "tamanho": 14705 },
     { "caminho": "playbooks/migrate-from-supabase.md", "sha256": "dbe34fb8daab35b806859ca124be8a866ca19589dd9fb5a2a972c33bc4f9ea30", "tamanho": 5366 },
-    { "caminho": "playbooks/new-project.md", "sha256": "3d9d40bbdce7c5e63711c90151502f4f2c2d36fa46dec704abc9986da7debd9a", "tamanho": 6546 },
+    { "caminho": "playbooks/new-project.md", "sha256": "afc0d20ed374d0dca11071f622ab004fa56d73d581a9109a64047d181ce7421e", "tamanho": 6726 },
     { "caminho": "references/auth-hooks.md", "sha256": "6881b0abc439a7ba1a8ac5d0e08740f5dc1651377b3ed8a833d2e6d37fc156c6", "tamanho": 4811 },
     { "caminho": "references/connection-contract.md", "sha256": "db813875bbd6907e58bc3a40c6104763c374912347010504fe52eb87bf04543f", "tamanho": 5080 },
     { "caminho": "references/gotchas.md", "sha256": "552d6a05be98ac0ca4ffd36434e16d2825e468d5c8302c55b1de6b4d319d0c8e", "tamanho": 13071 },

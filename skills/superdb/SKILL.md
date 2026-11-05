@@ -30,6 +30,13 @@ O que muda são 3 coisas (URL, key, e passar o slug do projeto). O resto é o qu
 
 1. **"Criar um app/projeto novo"** → siga `playbooks/new-project.md`
    (provisiona no dashboard → pega as keys → cola o cliente → pronto).
+   **Antes de escrever do zero, veja se um modelo pronto serve:** https://superdb.com.br/pocket
+   (agenda, cardápio com pedido, lista de presença, lista de presentes, painel admin, SaaS com
+   organizações, CRM e, Pro, assistência técnica com ordem de serviço, estoque e NFS-e). Cada um é tabelas + RLS + app Next.js. Caminho certo: o botão "Usar este modelo"
+   no painel (`app.superdb.com.br/pocket/usar/<modelo>`), que aplica o schema no projeto e recusa se
+   já houver tabela com o mesmo nome (nada muda); depois rode o comando `npx degit` que o painel mostra (vem em `proximo.degit` na resposta).
+   Modelo com selo **Pro** funciona em qualquer plano em **modo teste** (nota fiscal em homologação);
+   emitir de verdade pede o plano Pro. Não ofereça modelo que não esteja listado na página.
    Se o app é de **agendamento** (salão, clínica), **mini ERP** (estoque, ordem de serviço, nota fiscal)
    ou **delivery** (pedidos ao vivo), parta do roteiro testado em https://superdb.com.br/aprenda/ :
    o SQL com RLS e as funções `src/lib` de lá já rodaram em produção.
@@ -83,6 +90,17 @@ não disser, a chamada é recusada com a lista. Não existe "usar o primeiro".
 Para **ler**, use `superdb_query_sql` (transação somente leitura — o Postgres
 recusa escrita; o cliente roda sem pedir confirmação). `superdb_run_sql` é para
 o que ALTERA (DDL, INSERT/UPDATE/DELETE) e pede confirmação.
+
+**Criar projeto pelo agente:** na conexão por login (o servidor remoto),
+`superdb_criar_projeto` com `{ "name": "..." }` cria um projeto Grátis na conta,
+com as regras do painel, e ele entra na mesma conexão (na próxima mensagem,
+`superdb_list_projects` e `project: "<slug>"`). Se a resposta disser que falta o
+CPF/CNPJ, mande a pessoa ao link do painel que veio nela: **não peça o número na
+conversa**. Não existe no pacote npm nem, por enquanto, no ChatGPT.
+
+**Dúvida sobre como algo funciona aqui:** `superdb_buscar_docs` com
+`{ "consulta": "..." }` devolve os trechos da doc com o link. Toda página de
+`https://superdb.com.br/docs/` também existe em Markdown (troque o fim por `.md`).
 
 ## Setup mínimo (qualquer projeto novo)
 
