@@ -13,10 +13,11 @@ Detalhe completo em `references/lgpd.md`.
 
 ## 1. Criar a conta e o projeto (uma vez, no navegador)
 
-1. https://app.superdb.com.br → **Criar conta**. O cadastro pede CPF ou CNPJ
-   (identidade obrigatória, exigência fiscal brasileira) e confirmação de
-   e-mail — sem confirmar, o login não passa.
-2. **Novo projeto** → dê um nome. O **slug** é o identificador técnico e
+1. https://app.superdb.com.br → **Criar conta** (e-mail e senha, ou Google).
+   Pelo e-mail, confirme o endereço: sem confirmar, o login não passa.
+2. **Novo projeto** → dê um nome. No plano Grátis, o primeiro projeto pede o
+   CPF ou CNPJ da conta (um Grátis por pessoa ou empresa; é o número que vai na
+   nota fiscal se você assinar). O **slug** é o identificador técnico e
    **aceita só `a-z`, `0-9` e `_`** (3 a 31 caracteres). "Clínica Demo" vira
    `clinica_demo`; hífen é recusado.
 3. Ligue o **2FA** em *Minha conta → Segurança*. Toda a isolação dos seus dados
