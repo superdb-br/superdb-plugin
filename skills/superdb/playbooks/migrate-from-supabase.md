@@ -83,7 +83,8 @@ As chamadas `.auth.signInWithPassword` / `.from().select().eq()` / `.storage.fro
 ficam **iguais** (o `.storage` é real). O que quebra: `.channel` (realtime — ainda stub, minte
 `/rt/v1/token` com a sessão + `@supabase/realtime-js`; o RLS vale como no Supabase, mas regra que
 consulta outra tabela precisa de função `security definer` — veja `references/recipes.md`), a API
-`auth.admin` e `updateUser({ email })`, que o SDK ainda não tem. Desde o `@superdb/client` 0.3 existem
+`auth.admin` e `updateUser({ email })`, que o SDK ainda não tem (para mudar o e-mail de um usuário, o dono
+troca pelo painel, na ficha do usuário, com o mesmo UUID). Desde o `@superdb/client` 0.3 existem
 `onAuthStateChange`, `updateUser({ data })`, `resetPasswordForEmail`, `upsert`, `or`, `not`, `count` e a
 renovação sozinha da sessão. Diferenças: `updateUser({ password })` de conta com senha pede
 `current_password`; o link de redefinição volta com `#token=` e fecha com `resetPassword({ token, password })`;
