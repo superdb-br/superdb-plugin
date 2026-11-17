@@ -11,12 +11,12 @@ escopada a UM projeto, que autentica no endpoint de execução de SQL. Diferente
 - roda SQL/DDL no schema do projeto (como o role dono do tenant, **confinado** ao schema);
 - é **server-side only** — NUNCA vai no frontend/app/bundle;
 - é **revogável** e pode ter expiração;
-- **não alcança** outro projeto nem schemas de sistema (auth_global, etc.).
+- **não alcança** outro projeto nem os schemas de sistema da plataforma.
 
 ## Como obter
 - Dashboard → projeto → **API Keys** → seção *Management Keys* → gerar (mostra o
-  valor uma vez). *(Se o botão ainda não estiver no dashboard, peça ao platform admin
-  pra gerar — a chave + o `projectId` ficam guardados pra você.)*
+  valor uma vez). *(Se o botão ainda não estiver no dashboard, abra um chamado no suporte
+  pedindo a chave; ela vem junto com o `projectId`.)*
 - **Vertical / SaaS factory:** minta a chave programaticamente com a Group Key —
   `POST /groups/v1/<GROUP_ID>/tenants/<slug>/keys` (Bearer `sdb_gk_...`). Fecha a
   provisão 100% via API (provisiona → minta → aplica RLS). Ver `provisao-via-group-key.md`.
@@ -135,7 +135,7 @@ anon/authenticated automaticamente (event triggers no banco). Depois de aplicar 
 schema, o app já lê com `db.from('sua_tabela')`.
 
 ## Limites (de propósito)
-- Bloqueia schemas de sistema (`auth_global`, `proj_management`, `pg_*`, `storage`...).
+- Bloqueia schemas de sistema (`pg_*`, `storage` e os schemas internos da plataforma).
 - Bloqueia `SET ROLE`/`RESET ROLE` e `BEGIN`/`COMMIT`/`ROLLBACK` (`transaction_control_blocked`).
   Timeout 30s. SELECT ganha LIMIT implícito (1000).
 - `grant ... to public` vira `to anon, authenticated` na hora (vem em `avisos`).

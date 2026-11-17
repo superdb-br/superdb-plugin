@@ -121,15 +121,19 @@ const { data } = await superdb.from('tarefas').select()
 
 ## 6. Ligar a IA ao banco (opcional, mas é o atalho)
 
-Projeto → **API Keys → Conectar sua IA (MCP)**. Cole a config no Claude Desktop,
-Cursor ou Codex e gere a chave pelo botão. A partir daí o agente lê o schema,
-roda migrations e revisa as policies sem você sair do editor:
+Projeto → **API Keys → Conectar sua IA (MCP)**. O padrão é **Por login**: cole
+a URL `https://mcp.superdb.com.br/mcp` no Claude, Cursor ou Codex e entre com a
+conta, sem chave para guardar. A aba **Com chave** (pacote `@superdb/mcp`) serve
+para automação sem navegador: cole a config e gere a chave pelo botão. A partir
+daí o agente lê o schema, roda migrations e revisa as policies sem você sair do
+editor:
 
 > "Quais tabelas minhas ainda não têm política de RLS?"
 
-Com mais de um projeto, cada um entra como um servidor com nome próprio
-(`superdb-<slug>`) no mesmo `mcpServers` — o nome já vem preenchido justamente
-para as configs não se sobrescreverem.
+Por login, uma conexão só alcança os projetos que você marcar. Com chave, cada
+projeto entra como um servidor com nome próprio (`superdb-<slug>`) no mesmo
+`mcpServers`; o nome já vem preenchido justamente para as configs não se
+sobrescreverem.
 
 ## 7. Antes de colocar no ar
 

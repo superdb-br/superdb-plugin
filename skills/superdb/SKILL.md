@@ -99,7 +99,8 @@ CPF/CNPJ, mande a pessoa ao link do painel que veio nela: **não peça o número
 conversa**. Não existe no pacote npm nem, por enquanto, no ChatGPT.
 
 **Dúvida sobre como algo funciona aqui:** `superdb_buscar_docs` com
-`{ "consulta": "..." }` devolve os trechos da doc com o link. Toda página de
+`{ "consulta": "..." }` devolve os trechos da doc com o link (no servidor remoto;
+o pacote npm 0.5.0 ainda não a tem, e no ChatGPT ela não aparece). Toda página de
 `https://superdb.com.br/docs/` também existe em Markdown (troque o fim por `.md`).
 
 ## Setup mínimo (qualquer projeto novo)
@@ -122,7 +123,7 @@ conversa**. Não existe no pacote npm nem, por enquanto, no ChatGPT.
 ## Regras de ouro (não erre)
 
 - **SEMPRE passe `project: '<slug>'`** — sem ele os dados não roteiam (toma erro).
-- **`api.superdb.com.br` SEM `/rest/v1/`** — esse path é do Supabase, aqui não existe.
+- **`api.superdb.com.br/<tabela>`, na raiz, é a forma canônica.** O `/rest/v1/<tabela>` do Supabase também é aceito (o gateway tira o prefixo), mas não use em código novo.
 - **anon key** vai no frontend/app (é pública, RLS protege). **service_role** SÓ no
   backend, nunca no client/mobile.
 - **Dados de usuário precisam de login** — o `db.from()` usa o token da sessão

@@ -34,9 +34,10 @@ Erros: slug em uso, ou de tenant já purgado (ver "Deletar de verdade") → **40
 > **Slugs reservados (17/08/2026).** O schema do tenant é `proj_<slug>`, e alguns
 > nomes colidem com schemas internos — `management` é o control-plane da
 > plataforma. Estes slugs são recusados na criação: `management`, `public`,
-> `storage`, `realtime`, `auth`, `auth_global`, `pgrst_helpers`, `extensions`,
+> `storage`, `realtime`, `auth`, `extensions`,
 > `graphql`, `vault`, `cron`, `information_schema`, `pg_catalog`, `pg_toast`,
-> `postgres`, `admin`, `internal`, `system`, `platform`, `superdb`. Se você deriva
+> `postgres`, `admin`, `internal`, `system`, `platform`, `superdb` e mais alguns
+> nomes internos da plataforma. Se você deriva
 > o slug do nome do cliente, trate o 400 caindo para um sufixo (`acme_admin` em vez
 > de `admin`) — a reserva vale para criação nova, tenant existente não é afetado.
 

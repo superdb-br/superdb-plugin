@@ -77,15 +77,20 @@ Rejeite também se `|agora − timestamp| > 300s` (proteção contra replay).
 Responda `200` com `{"allow": false, "reason": "…"}`. O usuário recebe `403` com
 código `hook_blocked` e a mensagem. Qualquer outro `200` libera.
 
-## ⚠️ Hook bloqueante NÃO é trava de segurança
+## ⚠️ Por padrão, hook bloqueante NÃO é trava de segurança
 
 Se o endpoint do cliente cair, der timeout, retornar erro ou devolver algo que
-não seja JSON válido, **o acesso é liberado** (fail-open).
+não seja JSON válido, **o acesso é liberado** (fail-open). É o padrão de todo
+hook: não trancar todos os usuários para fora porque um webhook caiu.
 
-É deliberado — não trancar todos os usuários para fora porque um webhook caiu.
-Mas significa que `before-signup` é **regra de negócio com caminho de escape**.
+Para trava de verdade (lista de bloqueio, por exemplo), ligue **"negar quando o
+hook falhar"** no painel (Auth > Hooks), ou `deny_on_failure: true` ao criar o
+hook. Aí a falha do endpoint vira `403 hook_blocked`. O preço: se o endpoint
+cair, ninguém entra naquele evento até ele voltar.
+
+Sem essa opção, `before-signup` é **regra de negócio com caminho de escape**.
 Quando o usuário disser "quero que ninguém entre sem minha autorização", diga
-isso explicitamente: a autorização precisa existir também nas rotas dele.
+isso explicitamente: ligue a opção ou garanta a autorização também nas rotas dele.
 
 ## Limites
 
@@ -104,7 +109,7 @@ isso explicitamente: a autorização precisa existir também nas rotas dele.
 | hook não dispara | `active: false`, ou evento diferente do que você imagina (confira com `GET /`) |
 | 400 `hook_url_resolves_private` | o domínio resolve para IP interno |
 | 400 `hook_url_must_be_https` | http só é aceito em desenvolvimento |
-| bloqueante não bloqueia | endpoint caiu (fail-open) ou a resposta não é JSON com `allow:false` |
+| bloqueante não bloqueia | endpoint caiu (fail-open, sem "negar quando falhar") ou a resposta não é JSON com `allow:false` |
 | 409 `blocking_hook_limit_reached` | já há 5 bloqueantes no projeto |
 
-Doc pública: https://superdb.com.br/docs/guides/hooks/
+Ainda não há página pública só de hooks; a visão geral está em https://superdb.com.br/produto/auth (aba Hooks).

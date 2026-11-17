@@ -129,7 +129,7 @@ if (code) await db.auth.exchangeCodeForSession(code)
   `/token/exchange` é sempre daquele tenant.
 - Identidades sociais vivem em `proj_<slug>.auth_identities` — **por projeto**. A mesma
   conta Google em dois projetos = dois usuários distintos, sem link entre eles.
-  (O login social da própria plataforma SuperDB é outra tabela, em `auth_global`.)
+  (O login social do painel do SuperDB é separado e não aparece no seu projeto.)
 
 ## 6. Erros
 
