@@ -214,9 +214,14 @@ await db.storage.from(BUCKET).remove([`u/${uid}.txt`])
 const { data: { publicUrl } } = db.storage.from(BUCKET).getPublicUrl('foto.jpg')
 const thumb = publicUrl.replace('/object/', '/render/image/') + '?width=200&height=200&resize=cover'
 ```
-> ⚠️ **Não há pasta por usuário no Storage**: todo usuário logado do projeto lê, grava e apaga
-> em todos os buckets do projeto, inclusive os privados. Bucket privado protege de quem só tem a
-> URL ou a anon key. Não prometa ao usuário final que "só ele vê" um arquivo.
+> ⚠️ **Bucket privado NOVO é por usuário** (desde 17/11/2026): criado pelo painel ou pela API
+> de gestão, nasce em "cada usuário só os dele". A sessão do usuário só lista, baixa, troca e
+> apaga o que ela mesma enviou (dono = `owner_id`, gravado pelo storage-api com o id do
+> usuário; o nome da pasta não conta). A service_role alcança todos. Bucket privado ANTIGO
+> continua compartilhado: todo usuário logado lê, grava e apaga os arquivos de todos, até o
+> dono ligar o modo no painel (Storage). Para um bucket novo compartilhado, crie com
+> `por_dono: false`. Arquivo enviado pelo servidor não aparece para o usuário nesse modo:
+> entregue por link assinado.
 
 ## Tempo real (realtime) — mint + realtime-js
 `db.channel` ainda é stub. Minte um token dedicado e use o SDK do Supabase.

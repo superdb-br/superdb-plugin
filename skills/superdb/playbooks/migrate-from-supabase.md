@@ -59,7 +59,8 @@ social vem sem senha e continua entrando do mesmo jeito. O que **não** migra: f
 TOTP (quem usava MFA cadastra o autenticador de novo).
 
 > O arquivo tem o hash das senhas. Ele vai do seu computador direto para o seu projeto.
-> Não mande esse arquivo para o suporte: chamado não aceita anexo. Apague a sua cópia depois.
+> Não mande esse arquivo para o suporte (nem dentro de um .zip): ele não precisa passar pela equipe.
+> Apague a sua cópia depois. O que vai pelo chamado é só o dump do banco (.sql ou .zip até 50 MB).
 
 **Onde os usuários ficam:** na tabela `auth_users` do schema do projeto
 (`proj_<slug>.auth_users`). É para ela que apontam as FKs que no Supabase apontavam para
